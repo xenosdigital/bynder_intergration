@@ -43,14 +43,13 @@
       portal:     { url: portalUrl },
       assetTypes: assetTypes,
       mode:       mode,
-      onSuccess: function(assets) {
-        window.parent.postMessage({ type: "ucv-selection", assets: assets }, "*");
+      onSuccess: function(assets, additionalInfo) {
+        window.parent.postMessage({ type: "ucv-selection", assets: assets, additionalInfo: additionalInfo || null }, "*");
       }
     };
 
     var script    = document.createElement("script");
-    // Portal URL is injected at runtime — script src is set below
-    script.src = portalUrl.replace(/\/$/, "") + "/latest/bynder-compactview.js";
+    script.src = "https://d8ejoa1fys2rk.cloudfront.net/5.0.5/modules/compactview/bynder-compactview-5-latest.js";
 
     script.onerror = function() {
       window.parent.postMessage({ type: "ucv-log", msg: "ERROR: failed to load UCV script" }, "*");
