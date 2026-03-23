@@ -49,7 +49,8 @@
     };
 
     var script    = document.createElement("script");
-    script.src    = "https://d8ejoa1fys2rk.cloudfront.net/bynder-compactview/latest/bynder-compactview.js";
+    // Portal URL is injected at runtime — script src is set below
+    script.src = portalUrl.replace(/\/$/, "") + "/latest/bynder-compactview.js";
 
     script.onerror = function() {
       window.parent.postMessage({ type: "ucv-log", msg: "ERROR: failed to load UCV script" }, "*");
