@@ -15,20 +15,14 @@
 <div id="bynder-compactview"></div>
 
 <script>
-  // This page is intentionally config-free.
-  // All configuration (portal URL, asset types, etc.) is posted from the
-  // parent plugin UI via postMessage before the UCV script is loaded.
-
+  // Listen for ucv-init config from the parent plugin UI
   window.addEventListener("message", function handler(event) {
     var data = event.data;
     if (!data || data.type !== "ucv-init") return;
-
-    // Only initialise once
     window.removeEventListener("message", handler);
 
     var config = Object.assign({}, data.config, {
       onSuccess: function(assets) {
-        // Relay selection back to the plugin UI
         window.parent.postMessage({ type: "ucv-selection", assets: assets }, "*");
       }
     });
@@ -42,6 +36,17 @@
     };
     document.body.appendChild(script);
   });
+
+  // Signal to the parent that this page is ready to receive config.
+  // Use a small poll so it fires even if the parent listener isn't up yet.
+  function signalReady() {
+    window.parent.postMessage({ type: "ucv-ready" }, "*");
+  }
+
+  // Fire immediately, then again after a tick in case of race
+  signalReady();
+  setTimeout(signalReady, 100);
+  setTimeout(signalReady, 500);
 </script>
 </body>
 </html>
