@@ -7,14 +7,15 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #fff; }
-    #bynder-compactview { width: 100%; height: 100vh; }
   </style>
 </head>
 <body>
 
-<div id="bynder-compactview"></div>
-
+<!-- UCV script loaded synchronously — no dynamic injection -->
+<script src="https://ucv.bynder.com/5.0.5/modules/compactview/bynder-compactview-5-latest.js"></script>
 <script>
+  // Config is received via postMessage from the plugin UI.
+  // Once received, open the UCV immediately.
   var initialised = false;
 
   window.addEventListener("message", function(event) {
@@ -23,51 +24,26 @@
     if (initialised) return;
     initialised = true;
 
-    // Acknowledge back so the parent stops polling
+    // Acknowledge so the plugin stops polling
     window.parent.postMessage({ type: "ucv-ready" }, "*");
 
-    var portalUrl  = data.config && data.config.portal && data.config.portal.url;
-    var assetTypes = (data.config && data.config.assetTypes) || ["image"];
-    var mode       = (data.config && data.config.mode) || "SingleSelect";
+    var portalUrl  = data.config.portal.url;
+    var assetTypes = data.config.assetTypes || ["image"];
+    var mode       = data.config.mode || "SingleSelectFile";
 
-    // Set data-* attributes on the mount div — this is the most reliable
-    // initialisation path across UCV versions
-    var mount = document.getElementById("bynder-compactview");
-    mount.setAttribute("data-portal-url",  portalUrl);
-    mount.setAttribute("data-asset-types", assetTypes.join(","));
-    mount.setAttribute("data-mode",        mode);
-    mount.setAttribute("data-language",    "en_US");
-
-    // Also prepare the JS config as a fallback
-    window.BynderCompactViewConfig = {
-      portal:     { url: portalUrl },
+    BynderCompactView.open({
+      language: "en_US",
+      portal: { url: portalUrl },
       assetTypes: assetTypes,
-      mode:       mode,
+      mode: mode,
       onSuccess: function(assets, additionalInfo) {
-        window.parent.postMessage({ type: "ucv-selection", assets: assets, additionalInfo: additionalInfo || null }, "*");
+        window.parent.postMessage({
+          type: "ucv-selection",
+          assets: assets,
+          additionalInfo: additionalInfo || null
+        }, "*");
       }
-    };
-
-    var script    = document.createElement("script");
-    script.src = "https://d8ejoa1fys2rk.cloudfront.net/5.0.5/modules/compactview/bynder-compactview-5-latest.js";
-
-    script.onerror = function() {
-      window.parent.postMessage({ type: "ucv-log", msg: "ERROR: failed to load UCV script" }, "*");
-    };
-
-    script.onload = function() {
-      window.parent.postMessage({ type: "ucv-log", msg: "UCV script loaded" }, "*");
-
-      if (window.BynderCompactView) {
-        window.parent.postMessage({ type: "ucv-log", msg: "calling BynderCompactView.open()" }, "*");
-        // Use JS API with onSuccess callback
-        window.BynderCompactView.open(window.BynderCompactViewConfig);
-      } else {
-        window.parent.postMessage({ type: "ucv-log", msg: "ERROR: BynderCompactView not on window after script load" }, "*");
-      }
-    };
-
-    document.body.appendChild(script);
+    });
   });
 </script>
 </body>
